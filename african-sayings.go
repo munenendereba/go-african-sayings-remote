@@ -87,7 +87,9 @@ func AfricanSaying(langIn string, allSayings bool) {
 
 			sayingPos := rand.Intn(len(sayings.Sayings))
 
-			fmt.Println(fmt.Sprintf("%+v", sayings.Sayings[sayingPos]))
+			sayingDisplay := fmt.Sprintf("%+v", sayings.Sayings[sayingPos])
+
+			fmt.Println(sayingDisplay)
 
 		} else {
 
@@ -100,7 +102,9 @@ func AfricanSaying(langIn string, allSayings bool) {
 					log.Fatalln(err)
 				}
 
-				fmt.Println(fmt.Sprintf("%+v", sayings))
+				sayingsDisplay := fmt.Sprintf("%+v", sayings)
+
+				fmt.Println(sayingsDisplay)
 			}
 		}
 	}
