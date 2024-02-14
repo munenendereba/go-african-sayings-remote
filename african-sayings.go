@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
-	"os"
+	"net/http"
 )
 
 type Languages struct {
@@ -26,8 +26,32 @@ type Sayings struct {
 	Sayings []Saying `json:"sayings"`
 }
 
+var baseUrl string = "https://raw.githubusercontent.com/munenendereba/african-sayings/main/"
+
+func GetAvailableLanguages() Languages {
+	resp, err := http.Get(baseUrl + "languages.json")
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer resp.Body.Close()
+
+	lang, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	var languages Languages
+
+	json.Unmarshal(lang, &languages)
+
+	return languages
+}
+
 func AfricanSaying(langIn string, allSayings bool) {
-	baseUrl := "https://raw.githubusercontent.com/munenendereba/african-sayings/main/"
+
 	fileSuffix := "-sayings.json"
 
 	if langIn != "" {
@@ -47,52 +71,55 @@ func AfricanSaying(langIn string, allSayings bool) {
 		}
 
 	} else {
-		jsonFile, err := os.Open(baseUrl + "languages.json")
+		languages := GetAvailableLanguages()
 
-		if err != nil {
-			log.Fatalln(err)
-		} else {
-			fmt.Println("Successfully Opened languages.json")
-		}
+		if !allSayings {
+			randLang := len(languages.Languages)
+			langIn = languages.Languages[rand.Intn(randLang)].Lang
 
-		defer jsonFile.Close()
+			sayingsUrl := baseUrl + langIn + fileSuffix
 
-		byteValue, err := io.ReadAll(jsonFile)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		var languages Languages
-
-		json.Unmarshal(byteValue, &languages)
-
-		for i := 0; i < len(languages.Languages); i++ {
-			filepath := baseUrl + languages.Languages[i].Lang + fileSuffix
-
-			sayings, err := GetSayings(filepath)
+			sayings, err := GetSayings(sayingsUrl)
 
 			if err != nil {
 				log.Fatalln(err)
 			}
 
-			fmt.Println(sayings)
+			sayingPos := rand.Intn(len(sayings.Sayings))
+
+			fmt.Println(fmt.Sprintf("%+v", sayings.Sayings[sayingPos]))
+
+		} else {
+
+			for i := 0; i < len(languages.Languages); i++ {
+				sayingsUrl := baseUrl + languages.Languages[i].Lang + fileSuffix
+
+				sayings, err := GetSayings(sayingsUrl)
+
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				fmt.Println(fmt.Sprintf("%+v", sayings))
+			}
 		}
 	}
 }
 
-func GetSayings(filename string) (Sayings, error) {
-	file, err := os.Open(filename)
+func GetSayings(sayingsUrl string) (Sayings, error) {
+	resp, err := http.Get(sayingsUrl)
 
 	if err != nil {
 		log.Fatalln(err.Error())
 		return Sayings{}, err
 	}
 
-	fmt.Println("File", filename, "opened successfully.")
+	fmt.Println("")
+	fmt.Println("Fetched", sayingsUrl, "successfully.")
 
-	defer file.Close()
+	defer resp.Body.Close()
 
-	fileBytesValue, err2 := io.ReadAll(file)
+	fileBytesValue, err2 := io.ReadAll(resp.Body)
 
 	if err2 != nil {
 		log.Fatalln(err2.Error())
